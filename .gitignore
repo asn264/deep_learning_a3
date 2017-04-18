@@ -1,3 +1,11 @@
+#data folders
+mnist_data/processed/
+mnist_data/raw/
+mnist_data/README.md
+
+#model output
+dcgan/output/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
