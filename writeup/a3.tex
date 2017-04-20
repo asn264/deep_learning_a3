@@ -49,17 +49,19 @@ we minimize the KL-divergence as written above. Therefore, in the VAE setting, w
 \newline
 \newline
 Finally, we consider GANs. A GAN can be described as a game between two adversarial players, a generator $G$ with parameters $\theta^G$ and a discriminator $D$ with parameters $\theta^D$. The generator creates samples which appear to be drawn from original distribution $p$. The discriminator classifies samples as being real (drawn from the original distribution) or fake (created by the generator), and is trained to minimize the following loss:
-$$ J^D(\theta^D, \theta^G) = -\frac{1}{2} \mathrm{E}_{x \sim p_{data}} log\ D(x) - \frac{1}{2} \mathrm{E}_z log\ (1 - D(G(z)))$$
-The first summand expresses the cross-entropy loss of the discriminator on real samples drawn from the training data. $D(x)$ expresses the discriminator's probability estimate that $x$ is sampled from the data. If $D(x) = 1$, then $log\ D(x) = 0$ and the left summand is minimized. The second summand expresses the cross-entropy loss of the discriminator on ``fake" samples created by the generator. $D(G(z))$ expresses the probability that $z$ is sampled from the data distribution, so $1- D(G(z))$ expresses the probability that $z$ is fake. If $D(G(z)) = 0$, then the right summand is minimized. Note that $ J^D(\theta^D, \theta^G)$ is a function of $\theta^D$ and $\theta^G$, but $D$ can only optimize over $\theta^D$.
+$$ J^D(\theta^D, \theta^G) = -\frac{1}{2} \mathrm{E}_{x \sim p_{data}} [log\ D(x)] - \frac{1}{2} \mathrm{E}_z [log\ (1 - D(G(z)))]$$
+The first summand expresses the cross-entropy loss of the discriminator on real samples drawn from the training data. $D(x)$ expresses the discriminator's probability estimate that $x$ is sampled from the data. If $D(x) = 1$, then $log\ D(x) = 0$ and the left summand is minimized. The second summand expresses the cross-entropy loss of the discriminator on ``fake" samples created by the generator. $D(G(z))$ expresses the probability that $z$ is sampled from the data distribution, so $1- D(G(z))$ expresses the probability that $z$ is fake. If $D(G(z)) = 0$, then the discriminator is certain that a fake is indeed fake, and the right summand is minimized. Note that $ J^D(\theta^D, \theta^G)$ is a function of $\theta^D$ and $\theta^G$, but $D$ can only optimize over $\theta^D$.
 \newline
 \newline
-Next, the generator is trained to ``fool" the discriminator. 
+Next, the generator is trained to ``fool" the discriminator. The loss function used for the generator can vary, but a common one is the cross-entropy loss:
+$$J^G(\theta^G, \theta^D) = -\frac{1}{2} \mathrm{E}_z [log \ D(G(z))] $$
+$J^G$ is a function of $\theta^D$ and $\theta^G$ but $G$ can only optimize over $\theta^G$. If $G(z)$ looks exactly like a sample drawn from $p_{data}$, then $D(G(z)) = 1$ and we will minimize $J^G$.
+\newline
+\newline
+Typically, both the generator and the discriminator are neural networks which are trained simultaneously using gradient descent. 
+Unlike FVBNs and VAEs, GANs only provide us with an implicit representation of $\hat{p}$, since the generator is a neural network constructed to create the $z$ samples. For the same reason, unlike FVBNs, GANs can generate an entire sample simultaneously. Whereas VAEs require you to carefully select the distribution for the approximator $\hat{p}$, the neural networks used in GANs are generally considered universal approximators. In addition, unlike (most) VAEs, a GAN trained with sufficient data can theoretically recover the true distribution $p_{data}$ - it is clear above that both $J^G$ and $J^D$ can be minimized directly, whereas we can only minimize the ELBO of the VAE loss function. Finally, it is worth noting that GANs are (subjectively) consider to produce better samples than VAEs and FVBNs.
 
 \begin{comment}
-
- Typically, both the generator and the discriminator are neural networks.
-Unlike FVBNs and VAEs, GANs only provide us with an implicit representation of $\hat{p}$. Unlike FVBNs, GANs can generate an entire sample simultaneously. Whereas VAEs require you to carefully select the distribution for the approximator $\hat{p}$, the neural networks used in GANs are generally considered universal approximators. Therefore, unlike (most) VAEs, a GAN trained with sufficient data can theoretically recover the true distribution $p$. 
-
 Credit https://jaan.io/what-is-variational-autoencoder-vae-tutorial/ for VAE explanation
 \end{comment}
 }
