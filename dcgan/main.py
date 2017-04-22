@@ -271,7 +271,7 @@ for epoch in range(opt.niter):
                     #,normalize=True)
 
     # do checkpointing
-    #torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outf, epoch))
-    #torch.save(netD.state_dict(), '%s/netD_epoch_%d.pth' % (opt.outf, epoch))
-torch.save(netG.state_dict(), '%s/netG_epoch_%d.m' % (opt.outf, opt.niter))
-torch.save(netD.state_dict(), '%s/netD_epoch_%d.m' % (opt.outf, opt.niter))
+    torch.save(netG.state_dict(), '%s/netG.m' % (opt.outf))
+    torch.save(netD.state_dict(), '%s/netD.m' % (opt.outf))
+#torch.save(netG.state_dict(), '%s/netG_epoch_%d.m' % (opt.outf, opt.niter))
+#torch.save(netD.state_dict(), '%s/netD_epoch_%d.m' % (opt.outf, opt.niter))
