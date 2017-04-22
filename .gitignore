@@ -1,4 +1,5 @@
 #data folders
+cifar10_data/
 mnist_data/processed/
 mnist_data/raw/
 mnist_data/README.md

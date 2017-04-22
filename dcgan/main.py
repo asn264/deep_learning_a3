@@ -15,8 +15,8 @@ from torch.autograd import Variable
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default='mnist', help='cifar10 | lsun | imagenet | folder | lfw | mnist')
-parser.add_argument('--dataroot', default='../mnist_data/', help='path to dataset')
+parser.add_argument('--dataset', default='cifar10', help='cifar10 | lsun | imagenet | folder | lfw | mnist')
+parser.add_argument('--dataroot', default='../cifar10_data/', help='path to dataset')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--imageSize', type=int, default=64, help='the height / width of the input image to network')
@@ -95,8 +95,8 @@ ngpu = int(opt.ngpu)
 nz = int(opt.nz)
 ngf = int(opt.ngf)
 ndf = int(opt.ndf)
-#nc = 3
-nc = 1
+nc = 3
+#nc = 1
 
 
 # custom weights initialization called on netG and netD
@@ -273,5 +273,5 @@ for epoch in range(opt.niter):
     # do checkpointing
     #torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outf, epoch))
     #torch.save(netD.state_dict(), '%s/netD_epoch_%d.pth' % (opt.outf, epoch))
-torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outf, opt.niter))
-torch.save(netD.state_dict(), '%s/netD_epoch_%d.pth' % (opt.outf, opt.niter))
+torch.save(netG.state_dict(), '%s/netG_epoch_%d.m' % (opt.outf, opt.niter))
+torch.save(netD.state_dict(), '%s/netD_epoch_%d.m' % (opt.outf, opt.niter))
