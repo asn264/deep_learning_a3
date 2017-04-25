@@ -217,12 +217,12 @@ noise = torch.FloatTensor(opt.batchSize, nz, 1, 1)
 noise_conditionals = torch.FloatTensor(opt.batchSize, opt.n_classes) #matrix of one hots for randomly chosen class conditionals for fake examples
 noise_with_conditionals = torch.FloatTensor(opt.batchSize, nz+opt.n_classes) #input to generator, noise concat with conditionals
 
-#using fixed noise vectors + class conditionals, we will generate 60 fake images (6 for each class)
-fixed_noise = torch.FloatTensor(60, nz).normal_(0, 1) #used for generating images
-one_hot_labels = torch.LongTensor([i for i in range(10) for j in range(6)]).resize_(60,1) #0 six times, 1 six times, ... 9 six times.
-one_hots = torch.zeros(60,opt.n_classes).scatter_(1, one_hot_labels, 1) #also used for generating images
+#using fixed noise vectors + class conditionals, we will generate 50 fake images (5 for each class)
+fixed_noise = torch.FloatTensor(50, nz).normal_(0, 1) #used for generating images
+one_hot_labels = torch.LongTensor([i for i in range(10) for j in range(5)]).resize_(50,1) #0 five times, 1 five times, ... 9 five times.
+one_hots = torch.zeros(50,opt.n_classes).scatter_(1, one_hot_labels, 1) #also used for generating images
 fixed_noise_with_conditionals = torch.cat([fixed_noise,one_hots],1)
-fixed_noise_with_conditionals.resize_(60, nz+opt.n_classes,1,1)
+fixed_noise_with_conditionals.resize_(50, nz+opt.n_classes,1,1)
 
 label = torch.FloatTensor(opt.batchSize)
 real_label = 1
@@ -314,12 +314,10 @@ for epoch in range(opt.niter):
               % (epoch, opt.niter, i, len(dataloader),
                  errD.data[0], errG.data[0], D_x, D_G_z1, D_G_z2))
 
-    vutils.save_image(real_cpu, '%s/real_samples.png' % opt.outf) #,normalize=True)
-    
-    for c in range(opt.n_classes):
-        fake = netG(fixed_noise_with_conditionals)
-        vutils.save_image(fake.data, '%s/fake_samples_epoch_%03d_class_%d.png' % (opt.outf, epoch, c)) #,normalize=True)
+    vutils.save_image(real_cpu, '%s/real_samples.png' % opt.outf), normalize=True)
+    fake = netG(fixed_noise_with_conditionals)
+    vutils.save_image(fake.data, '%s/fake_samples_epoch_%03d.png' % (opt.outf, epoch)), normalize=True)
 
     # do checkpointing
-    torch.save(netG.state_dict(), '%s/netG.m' % (opt.outf))
-    torch.save(netD.state_dict(), '%s/netD.m' % (opt.outf))
+    torch.save(netG.state_dict(), '%s/netG_epoch_%d.m' % (opt.outf, epoch))
+    torch.save(netD.state_dict(), '%s/netD_epoch_%d.m' % (opt.outf, epoch))
