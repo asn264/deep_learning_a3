@@ -185,12 +185,6 @@ class _netD(nn.Module):
             #nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
         )
 
-        '''
-        self.mlp_conditional = nn.Sequential(
-            nn.Linear(opt.n_classes, opt.n_classes, bias=False),
-            nn.Sigmoid()
-        )
-        '''
         self.mlp_final = nn.Sequential(
             nn.Linear(opt.n_classes+opt.dim_convolve_feature_map,1, bias=False),
             nn.Sigmoid()
@@ -203,12 +197,11 @@ class _netD(nn.Module):
         else:
             #get convolved feature map of images
             image_output = self.convolve_image(image_input)
-            image_output.data.resize_(batch_size,opt.dim_convolve_feature_map)
 
             #concatenate MLP(one-vectors) with convolved feature map and pass through a final MLP
-            final_output = self.mlp_final(torch.cat([image_output,conditional_input],image_output.dim()-1))
+            final_output = self.mlp_final(torch.cat([image_output.view(batch_size,opt.dim_convolve_feature_map),conditional_input],1))
 
-        return final_output.view(-1,1)
+        return final_output
 
 netD = _netD(ngpu)
 netD.apply(weights_init)
@@ -223,7 +216,14 @@ conditional_input = torch.FloatTensor(opt.batchSize, opt.n_classes) #this matrix
 noise = torch.FloatTensor(opt.batchSize, nz, 1, 1)
 noise_conditionals = torch.FloatTensor(opt.batchSize, opt.n_classes) #matrix of one hots for randomly chosen class conditionals for fake examples
 noise_with_conditionals = torch.FloatTensor(opt.batchSize, nz+opt.n_classes) #input to generator, noise concat with conditionals
-fixed_noise = torch.FloatTensor(opt.batchSize, nz, 1, 1).normal_(0, 1) #used for generating
+
+#using fixed noise vectors + class conditionals, we will generate 60 fake images (6 for each class)
+fixed_noise = torch.FloatTensor(60, nz).normal_(0, 1) #used for generating images
+one_hot_labels = torch.LongTensor([i for i in range(10) for j in range(6)]).resize_(60,1) #0 six times, 1 six times, ... 9 six times.
+one_hots = torch.zeros(60,opt.n_classes).scatter_(1, one_hot_labels, 1) #also used for generating images
+fixed_noise_with_conditionals = torch.cat([fixed_noise,one_hots],1)
+fixed_noise_with_conditionals.resize_(60, nz+opt.n_classes,1,1)
+
 label = torch.FloatTensor(opt.batchSize)
 real_label = 1
 fake_label = 0
@@ -234,7 +234,7 @@ if opt.cuda:
     criterion.cuda()
     input, label = input.cuda(), label.cuda()
     conditional_input = conditional_input.cuda()
-    noise, fixed_noise = noise.cuda(), fixed_noise.cuda()
+    noise, fixed_noise_with_conditionals = noise.cuda(), fixed_noise_with_conditionals.cuda()
     noise_conditionals, noise_with_conditionals = noise_conditionals(), noise_with_conditionals()
 
 input = Variable(input)
@@ -243,7 +243,7 @@ label = Variable(label)
 noise = Variable(noise)
 noise_conditionals = Variable(noise_conditionals)
 noise_with_conditionals = Variable(noise_with_conditionals)
-fixed_noise = Variable(fixed_noise)
+fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
 
 # setup optimizer
 optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -251,6 +251,7 @@ optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
 for epoch in range(opt.niter):
     for i, data in enumerate(dataloader, 0):
+
         ############################
         # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
         ###########################
@@ -274,9 +275,7 @@ for epoch in range(opt.niter):
         errD_real = criterion(output, label)
         errD_real.backward()
         D_x = output.data.mean()
-        sys.exit()
-        
-        """
+
         '''Train with fake images and "fake" labels'''
         noise.data.resize_(batch_size, nz, 1, 1)
         noise.data.normal_(0, 1) #nbatch number of noisy vectors of length nz
@@ -293,20 +292,19 @@ for epoch in range(opt.niter):
         fake = netG(noise_with_conditionals)
         
         label.data.fill_(fake_label)
-        output = netD(fake.detach())
+        output = netD(fake.detach(),noise_conditionals,batch_size)
         errD_fake = criterion(output, label)
         errD_fake.backward()
         D_G_z1 = output.data.mean()
         errD = errD_real + errD_fake
         optimizerD.step()
 
-    
         ############################
         # (2) Update G network: maximize log(D(G(z)))
         ###########################
         netG.zero_grad()
         label.data.fill_(real_label)  # fake labels are real for generator cost
-        output = netD(fake)
+        output = netD(fake,noise_conditionals,batch_size)
         errG = criterion(output, label)
         errG.backward()
         D_G_z2 = output.data.mean()
@@ -315,17 +313,12 @@ for epoch in range(opt.niter):
         print('[%d/%d][%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f / %.4f'
               % (epoch, opt.niter, i, len(dataloader),
                  errD.data[0], errG.data[0], D_x, D_G_z1, D_G_z2))
-        if i % 100 == 0:
-            vutils.save_image(real_cpu,
-                    '%s/real_samples.png' % opt.outf
-                    )
-                    #,normalize=True)
-            fake = netG(fixed_noise)
-            vutils.save_image(fake.data,
-                    '%s/fake_samples_epoch_%03d.png' % (opt.outf, epoch)
-                    )
-                    #,normalize=True)
-        """
+
+    vutils.save_image(real_cpu, '%s/real_samples.png' % opt.outf) #,normalize=True)
+    
+    for c in range(opt.n_classes):
+        fake = netG(fixed_noise_with_conditionals)
+        vutils.save_image(fake.data, '%s/fake_samples_epoch_%03d_class_%d.png' % (opt.outf, epoch, c)) #,normalize=True)
 
     # do checkpointing
     torch.save(netG.state_dict(), '%s/netG.m' % (opt.outf))
