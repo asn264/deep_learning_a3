@@ -158,6 +158,6 @@ fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
 
 fake = netG(fixed_noise_with_conditionals)
 vutils.save_image(fake.data, opt.outf+'/no_nrow.png', normalize=True)
-vutils.save_image(fake.data, opt.outf+'/nrow_10.png', nrow=10, normalize=True)
+vutils.save_image(fake.data, opt.outf+'/nrow_10.png', nrow=5, normalize=True)
 
 
