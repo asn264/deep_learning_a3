@@ -111,14 +111,19 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
-'''ORIGINAL NET G'''
+'''
+Bc we are loading both conditional and unconditional models in this script, 
+and bc _netG must inherit from super(_netG) with same name, this script passes input_dim as a param to init fn.
+-Set input_dim as nz for vanilla
+-Set input_dim as nz+opt.n_classes for conditional
+'''
 class _netG(nn.Module):
-    def __init__(self, ngpu):
+    def __init__(self, ngpu, input_dim):
         super(_netG, self).__init__()
         self.ngpu = ngpu
         self.main = nn.Sequential(
             # input is Z, going into a convolution
-            nn.ConvTranspose2d(     nz, ngf * 8, 4, 1, 0, bias=False),
+            nn.ConvTranspose2d( input_dim, ngf * 8, 4, 1, 0, bias=False),
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
             # state size. (ngf*8) x 4 x 4
@@ -146,46 +151,11 @@ class _netG(nn.Module):
             output = self.main(input)
         return output
 
-'''CONDITIONAL NET G IS THE SAME EVERYWHERE'''
-class _netG_cond(nn.Module):
-    def __init__(self, ngpu):
-        super(_netG, self).__init__()
-        self.ngpu = ngpu
-        self.main = nn.Sequential(
-            # input is Z, going into a convolution
-            nn.ConvTranspose2d(nz+opt.n_classes, ngf * 8, 4, 1, 0, bias=False),
-            nn.BatchNorm2d(ngf * 8),
-            nn.ReLU(True),
-            # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 4),
-            nn.ReLU(True),
-            # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 2),
-            nn.ReLU(True),
-            # state size. (ngf*2) x 16 x 16
-            nn.ConvTranspose2d(ngf * 2,     ngf, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf),
-            nn.ReLU(True),
-            # state size. (ngf) x 32 x 32
-            nn.ConvTranspose2d(    ngf,      nc, 4, 2, 1, bias=False),
-            nn.Tanh()
-            # state size. (nc) x 64 x 64
-        )
-
-    def forward(self, input):
-        if isinstance(input.data, torch.cuda.FloatTensor) and self.ngpu > 1:
-            output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
-        else:
-            output = self.main(input)
-        return output
-
-netG_cond = _netG_cond(ngpu)
+netG_cond = _netG(ngpu, input_dim = nz+opt.n_classes)
 netG_cond.apply(weights_init)
 netG_cond.load_state_dict(torch.load(opt.netG))
 
-netG = _netG(ngpu)
+netG = _netG(ngpu, input_dim = nz)
 netG.apply(weights_init)
 netG.load_state_dict(torch.load(opt.netG_cond))
 
