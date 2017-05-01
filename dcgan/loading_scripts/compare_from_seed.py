@@ -153,11 +153,11 @@ class _netG(nn.Module):
 
 netG_cond = _netG(ngpu, input_dim = nz+opt.n_classes)
 netG_cond.apply(weights_init)
-netG_cond.load_state_dict(torch.load(opt.netG))
+netG_cond.load_state_dict(torch.load(opt.netG_cond))
 
 netG = _netG(ngpu, input_dim = nz)
 netG.apply(weights_init)
-netG.load_state_dict(torch.load(opt.netG_cond))
+netG.load_state_dict(torch.load(opt.netG))
 
 '''
 We will generate 11 images from one noise vector: 
@@ -173,7 +173,7 @@ one_hots = torch.zeros(10,opt.n_classes).scatter_(1, one_hot_labels, 1) #matrix 
 fixed_noise_with_conditionals = torch.cat([fixed_noise_repeating,one_hots],1) #concat fixed_noise_repeating and one_hots
 
 fixed_noise_with_conditionals.resize_(10, nz+opt.n_classes,1,1)
-fixed_noise.resize(1,nz,1,1)
+fixed_noise.resize_(1,nz,1,1)
 
 fixed_noise = Variable(fixed_noise)
 fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
