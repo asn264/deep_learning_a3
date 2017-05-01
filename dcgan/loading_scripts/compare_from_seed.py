@@ -36,7 +36,7 @@ parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--netG_cond', default='../cifar/conditional/netG_epoch_19.m', help="path to netG (to continue training)")
 parser.add_argument('--netG', default='../cifar/baseline_normalized/netG_epoch_19.m', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
-parser.add_argument('--outf', default='output/', help='folder to output images and model checkpoints')
+parser.add_argument('--outf', default='./', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 parser.add_argument('--n_classes', type=int, default=10, help='number of classes for conditional')
 parser.add_argument('--dim_convolve_feature_map', type=int, default=200, help='dimension of learned image feature map in discriminator')
@@ -211,7 +211,7 @@ fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
 fake = netG(fixed_noise)
 fake_conditional = netG_cond(fixed_noise_with_conditionals)
 
-vutils.save_image(fake.data, opt.outf+'vanilla_fake.png', normalize=True)
-vutils.save_image(fake_conditional.data, opt.outf+'conditional_fake.png', normalize=True)
+vutils.save_image(fake.data, opt.outf+'fixed_noise_vanilla_fake.png', normalize=True)
+vutils.save_image(fake_conditional.data, opt.outf+'fixed_noise_conditional_fake.png', normalize=True)
 
 
