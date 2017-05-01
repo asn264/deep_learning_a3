@@ -157,7 +157,6 @@ fixed_noise_with_conditionals.resize_(50, nz+opt.n_classes,1,1)
 fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
 
 fake = netG(fixed_noise_with_conditionals)
-vutils.save_image(fake.data, opt.outf+'/no_nrow.png', normalize=True)
-vutils.save_image(fake.data, opt.outf+'/nrow_10.png', nrow=5, normalize=True)
-
+vutils.save_image(fake.data, opt.outf+'/5x10_generated.png', nrow=5, normalize=True)
+print ('Done.')
 
