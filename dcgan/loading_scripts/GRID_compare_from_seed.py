@@ -34,7 +34,7 @@ parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, def
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-parser.add_argument('--netG_cond', default='../cifar/conditional_40/netG_epoch_19.m', help="path to netG (to continue training)")
+parser.add_argument('--netG_cond', default='../cifar/conditional_400_4/netG_epoch_19.m', help="path to netG (to continue training)")
 parser.add_argument('--netG', default='../cifar/baseline_normalized_40/netG_epoch_19.m', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
 parser.add_argument('--outf', default='./', help='folder to output images and model checkpoints')
