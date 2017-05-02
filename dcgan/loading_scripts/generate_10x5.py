@@ -147,6 +147,7 @@ class _netG(nn.Module):
 netG = _netG(ngpu)
 netG.apply(weights_init)
 netG.load_state_dict(torch.load(opt.netG))
+netG.eval()
 
 #using fixed noise vectors + class conditionals, we will generate 50 fake images (5 for each class)
 fixed_noise = torch.FloatTensor(50, nz).normal_(0, 1) #used for generating images

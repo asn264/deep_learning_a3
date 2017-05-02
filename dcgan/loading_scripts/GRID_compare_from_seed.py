@@ -9,6 +9,7 @@ import os
 import sys
 import random
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
@@ -161,21 +162,22 @@ netG.apply(weights_init)
 netG.load_state_dict(torch.load(opt.netG))
 netG.eval()
 
-'''
-We will generate 11 images from one noise vector: 
-- 1 from vanilla model
-- 10 from conditional model (one image per class) 
-'''
+num_examples = 3
+z_np = np.random.randn(num_examples,nz) #different z vectors
 
-fixed_noise = torch.FloatTensor(1, nz).normal_(0, 1) #fixed z vector for all images
+z = torch.Tensor(z_np) #for vanilla model
+z.resize_(num_examples,nz,1,1)
 
-fixed_noise_repeating = fixed_noise.repeat(opt.n_classes,1) #matrix with z on each row
-one_hot_labels = torch.LongTensor([i for i in range(opt.n_classes)]).resize_(opt.n_classes,1) #list of labels
-one_hots = torch.zeros(10,opt.n_classes).scatter_(1, one_hot_labels, 1) #matrix of corresponding one-hots
-fixed_noise_with_conditionals = torch.cat([fixed_noise_repeating,one_hots],1) #concat fixed_noise_repeating and one_hots
+#make 10 (n_classes) copies of the first array, 10 copies of the second, etc.
+z_repeating = torch.Tensor(np.array([i for i in z_np for j in range(opt.n_classes)]))
 
-fixed_noise_with_conditionals.resize_(10, nz+opt.n_classes,1,1)
-fixed_noise.resize_(1,nz,1,1)
+#create one hot matrix
+one_hot_labels = torch.LongTensor([i for j in range(num_examples) for i in range(opt.n_classes)]).resize_(num_examples*opt.n_classes,1) #list of labels
+one_hots = torch.zeros(num_examples*opt.n_classes,opt.n_classes).scatter_(1,one_hot_labels,1)
+
+#concat z repeats with conditionals
+z_repeating_with_conditionals = torch.cat([z_repeating,one_hots],1) #matrix of correspondng one hots
+z_repeating_with_conditionals.resize_(num_examples*opt.n_classes,opt.nz+opt.n_classes,1,1)
 
 fixed_noise = Variable(fixed_noise)
 fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
@@ -183,7 +185,7 @@ fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
 fake = netG(fixed_noise)
 fake_conditional = netG_cond(fixed_noise_with_conditionals)
 
-vutils.save_image(fake.data, opt.outf+'fixed_noise_vanilla_fake.png', normalize=True)
-vutils.save_image(fake_conditional.data, opt.outf+'fixed_noise_conditional_fake.png', normalize=True)
+vutils.save_image(fake.data, opt.outf+'fixed_noise_vanilla_fake.png', nrow=10, normalize=True)
+vutils.save_image(fake_conditional.data, opt.outf+'fixed_noise_conditional_fake.png', nrow=10, normalize=True)
 
 

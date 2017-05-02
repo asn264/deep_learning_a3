@@ -154,10 +154,12 @@ class _netG(nn.Module):
 netG_cond = _netG(ngpu, input_dim = nz+opt.n_classes)
 netG_cond.apply(weights_init)
 netG_cond.load_state_dict(torch.load(opt.netG_cond))
+netG_cond.eval()
 
 netG = _netG(ngpu, input_dim = nz)
 netG.apply(weights_init)
 netG.load_state_dict(torch.load(opt.netG))
+netG.eval()
 
 '''
 We will generate 11 images from one noise vector: 
