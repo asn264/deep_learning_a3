@@ -155,11 +155,7 @@ class _netG(nn.Module):
         if isinstance(input.data, torch.cuda.FloatTensor) and self.ngpu > 1:
             output = nn.parallel.data_parallel(self.main, input, range(self.ngpu))
         else:
-            print (input)
-
             embed = self.embedding(input.view(batch_size,nz+opt.n_classes))
-            print(embed)
-            sys.exit()
             output = self.main(embed.view(batch_size,opt.dim_class_embedding,1,1))
         return output
 
@@ -269,7 +265,7 @@ optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 for epoch in range(opt.niter):
     for i, data in enumerate(dataloader, 0):
 
-        print (i)
+        #print (i)
         ############################
         # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
         ###########################
