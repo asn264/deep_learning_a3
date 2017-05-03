@@ -271,6 +271,8 @@ noise = Variable(noise)
 noise_conditionals = Variable(noise_conditionals)
 noise_with_conditionals = Variable(noise_with_conditionals)
 fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
+one_hots = Variable(one_hots)
+fixed_noise = Variable(fixed_noise)
 
 # setup optimizer
 optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
