@@ -34,7 +34,7 @@ parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, def
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-parser.add_argument('--netG_cond', default='../cifar/conditional_400_4/netG_epoch_19.m', help="path to netG (to continue training)")
+parser.add_argument('--netG_cond', default='../cifar/conditional_400_5/netG_epoch_12.m', help="path to netG (to continue training)")
 parser.add_argument('--netG', default='../cifar/baseline_normalized_40/netG_epoch_19.m', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
 parser.add_argument('--outf', default='./', help='folder to output images and model checkpoints')
@@ -185,7 +185,7 @@ z_repeating_with_conditionals = Variable(z_repeating_with_conditionals)
 fake = netG(z)
 fake_conditional = netG_cond(z_repeating_with_conditionals)
 
-vutils.save_image(fake.data, opt.outf+'fixed_noise_vanilla_fake.png', nrow=10, normalize=True)
-vutils.save_image(fake_conditional.data, opt.outf+'fixed_noise_conditional_fake.png', nrow=10, normalize=True)
+vutils.save_image(fake.data, opt.outf+'baseline_normalized_fixed_noise_vanilla_fake.png', nrow=10, normalize=True)
+vutils.save_image(fake_conditional.data, opt.outf+'conditional_400_fixed_noise_conditional_fake.png', nrow=10, normalize=True)
 
 
