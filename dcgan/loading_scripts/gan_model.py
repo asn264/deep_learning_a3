@@ -183,11 +183,12 @@ class _netD(nn.Module):
             #create convolution feature vector
             nn.Conv2d(ndf * 8, opt.dim_convolve_feature_map, 4, 1, 0, bias=False),
         )
-        #concatenate convolution feature vector and one-hot class embeddings and pass into a sigmoid layer
+        #learn an embedding on the one-hot class vectors
         self.mlp = nn.Sequential(
             nn.Linear(opt.n_classes, opt.dim_class_embedding, bias=False),
             nn.Sigmoid()
         )
+        #concatenate convolution feature vector and class embeddings and pass into a sigmoid layer
         self.mlp_final = nn.Sequential(
             nn.Linear(opt.dim_class_embedding+opt.dim_convolve_feature_map,1, bias=False),
             nn.Sigmoid()
