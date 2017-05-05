@@ -60,10 +60,6 @@ $J^G$ is a function of $\theta^D$ and $\theta^G$ but $G$ can only optimize over 
 \newline
 \newline
 Typically, both the generator and the discriminator are neural networks which are trained simultaneously using gradient descent on real and fake samples. Unlike FVBNs and VAEs, GANs only provide us with an implicit representation of $\hat{p}$, since the generator is a neural network constructed to create the $G(z)$ samples. For the same reason, unlike FVBNs, GANs can generate an entire sample simultaneously. Whereas VAEs require you to carefully select the distribution for the approximator $\hat{p}$, the neural networks used in GANs are generally considered universal approximators. In addition, unlike (most) VAEs, a GAN trained with sufficient data can theoretically recover the true distribution $p_{data}$ - it is clear above that both $J^G$ and $J^D$ can be minimized directly, whereas we can only minimize the ELBO of the VAE loss function. Finally, it is worth noting that GANs are (subjectively) considered to produce better samples than VAEs and FVBNs.
-
-\begin{comment}
-Credit https://jaan.io/what-is-variational-autoencoder-vae-tutorial/ for VAE explanation
-\end{comment}
 }
 \item{\textit{Explain conditional generation using GANs, versus the vanilla unconditional version. Please briefly draw a diagram when training conditional GANs, with the condition context C, generator G, discriminator D, random vector z and output x.}
 \newline
@@ -71,7 +67,7 @@ Credit https://jaan.io/what-is-variational-autoencoder-vae-tutorial/ for VAE exp
 In the previous presentation of GANs, we described ``vanilla" unconditional generation where we take $z$ samples from a noisy prior distribution and feed them into the generator $G$. One problem is that we have no control over the kind of sample we generate - or, mathematically speaking, on the distribution of the samples being generated. 
 \newline
 \newline
-To address this issue, Mirza and Osindero (2014) suggest building Conditional GANs, which condition both the generator and discriminator on some context $C$. For example, Mirza and Osindero set $C$ as one-hot vectors indicating class labels for data.
+To address this issue, Mirza and Osindero (2014) suggest building Conditional GANs, which condition both the generator and discriminator on some context $C$. For example, Mirza and Osindero set $C$ as one-hot vectors indicating class labels for data. [3]
 \newline
 \newline
 In the generator, we combine the noise vector $z$ with the context $C$ at the input layer (for example, by concatenation), before feeding it through an appropriately-sized convolutional network to generate $G(z|C)$. Ideally, $G(z|C)$ should look like it belongs to the class of $C$. In the discriminator, we similarly combine the inputs $X$ (either $G(z|C)$ or $x \sim p_{data}$) with the appropriate one-hot vector $C$ before feeding it through an appropriately-sized convolutional network to compute $D(X|C)$. Finally, to generate samples of a specific class, we simply sample $z$ from the noise prior, concatenate with the $C$ vector for the intended class and compute $G(z|C)$. 
@@ -83,71 +79,69 @@ Below, we provide a diagram of the Conditional GAN framework (borrowed from Mirz
   \label{fig:boat1}
 \end{figure}
 
-\begin{comment}
-Cite: Mirza and Osindero "Conditional Generative Adversarial Networks" (2014)
-\end{comment}
-
 }
 \end{enumerate}
 
 \section{GAN Workhouse}
 
-We trained several GANs on the CIFAR-10 dataset. The CIFAR-10 dataset consists of 50,000 training images from 10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck. The images are only 32x32 pixels, and we found that the resolution quality of the images is poor. To begin our exploration of GANs, we decided to train a DCGAN model, developed by Radford et. al., which has generally strong performance on generative tasks for images. We trained our baseline model using the PyTorch implementation (and default parameters) of DCGAN, which can be found in the PyTorch GitHub repository. Below, we show an example of generated output of this baseline model after 40 epochs:
+We trained several GANs on the CIFAR-10 dataset. The CIFAR-10 dataset consists of 50,000 training images from 10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck. The images are only 32x32 pixels, and we found that the resolution quality of the images is poor. To begin our exploration of GANs, we decided to train a DCGAN model, developed by Radford et. al., which has generally strong performance on generative tasks for images. [5] We trained our baseline model using the PyTorch implementation (and default parameters) of DCGAN, which can be found in the PyTorch GitHub repository. [6] Below, we show an example of generated output of this baseline model after 40 epochs.
 \\
 \\
-\begin{center} 
-INSERT IMAGE HERE 
-\newline
-\newline
-\end{center}
+\begin{figure}[H]
+  \includegraphics[scale=0.5]{images/baseline_normalized_10x5_generated.png}
+  \label{fig:boat1}
+  \caption{Baseline Model at 40 Epochs}
+\end{figure}
+
 Next we incorporated the conditional GAN framework outlined in Conditional Generative Adversarial Nets into the DCGAN model, so that we could utilize class labels while training on the CIFAR-10 dataset. This would also allow us to do class-conditioned generation of images. As described in the paper, a vanilla GAN can be extended to a conditional GAN by feeding additional information, like class labels or data from other modalities, into both the generator and the discriminator. 
 \newline
-\subsection*{Initial Conditional DCGAN Architecture}
+\subsection*{Conditional DCGAN Architecture}
 In the first version of our conditional DCGAN model, we concatenated the input noise vector $z$ and a one-hot encoding of a randomly-chosen class label, then passed this entire concatenated vector into the generator $G$. Besides the class-conditioned input vector $z$, the architecture of the generator was exactly as in the original DCGAN model. 
 \newline
 \newline
 In the discriminator, an image tensor that came from either a real example in the data or from the generator was passed through a series of convolution, leaky ReLU, and batch-norm layers - that is, through a convolutional neural network - to create a single feature vector. Then this feature vector was concatenated with a one-hot encoding of the image's class label. If the image being passed through the discriminator was from the original dataset, then its true class label would be used. If the image was a  fake image created by the generator, then the random class label used for generation was used. Finally, the concatenation of the feature vector and its corresponding one-hot label vector was passed through a sigmoid layer, which used an affine transformation to map the input vector to a single value and then applied the sigmoid non-linearity to compute the required probability. 
 \newline
 \newline
-We demonstrate this architecture below:
-\\
-\\
-\begin{center} 
-INSERT IMAGE HERE 
-\newline
-\newline
-\end{center}
-In this model, we have two new parameters to tune - the dimension of the convolution feature vector in the discriminator that is concatenated with the one-hot label vectors, and the vector representations used to represent class conditionals. First, we experimented with the former by varying the dimensions of the convolved feature vector between 100, 200, and 400. We found that the dimension of 100 resulted in the lowest quality images, while 200 and 400 were fairly similar, though 400 was slightly better. We concluded that more expressive features from the convolutional network resulted in better performance in the overall model. Below we show output from our conditional model with a convolution feature vector dimension of 400, trained for X epochs:
-\begin{center} 
-INSERT IMAGE HERE 
-\newline
-\newline
-\end{center}When using the conditional DCGAN model to generate class-conditioned images, we conducted an experiment to determine the extent to which the class conditionals affected the images created by the generator network. We fed the generator the same fixed noise vector with each of the class labels to see if the model generated appropriate images for each class.  However, we noticed that all of the images generated from the same noise vector were very similar, even though they were conditioned on different class labels, as shown below:
-\begin{center} 
-INSERT IMAGE HERE 
-\newline
-\newline
-\end{center}
+In this model, we have two new parameters to tune - the dimension of the convolution feature vector in the discriminator that is concatenated with the one-hot label vectors, and the vector representations used to represent class conditionals. First, we experimented with the former by varying the dimensions of the convolved feature vector between 100, 200, and 400. We found that the dimension of 100 resulted in the lowest quality images, while 200 and 400 were fairly similar, though 400 was slightly better. We concluded that more expressive features from the convolutional network resulted in better performance in the overall model. Below we show output from our conditional model with a convolution feature vector dimension of 400, trained for 87 epochs:
+\begin{figure}[H]
+  \includegraphics[scale=0.5]{images/conditional_400_10x5_generated.png}
+  \label{fig:boat1}
+  \caption{Generated Images from Our Best Model}
+\end{figure}
+When using the conditional DCGAN model to generate class-conditioned images, we conducted an experiment to determine the extent to which the class conditionals affected the images created by the generator network. We fed the generator the same fixed noise vector with each of the class labels to see if the model generated appropriate images for each class.  However, we noticed that all of the images generated from the same noise vector were very similar, even though they were conditioned on different class labels, as shown below:
+\begin{figure}[H]
+  \includegraphics[scale=0.5]{images/conditional_400_fixed_noise_conditional_fake.png}
+  \label{fig:boat1}
+  \caption{Conditional Experiment on Our Best Model}
+\end{figure}
 Since CIFAR-10 is a fairly complex dataset, we also trained the same architecture on the popular MNIST dataset, which is generally considered to be ``easier" for the generation task. Below, we show the results of the same experiment - a single fixed noise vector being passed through the generator, each time conditioned on a different class label (in this case, digits):
-\begin{center} 
-INSERT IMAGE HERE 
-\newline
-\newline
-\end{center}
-In both examples, you can see that the class conditional makes very little (if any) difference in the nature of the image generated by the model. We also trained similar models with slightly different architectures. In one experiment, we added a sigmoid layer to the one-hot vector before concatenating it with the convolved feature vector over the (fake or real) image. This sigmoid layer allowed us to learn small (10-dimensional) embeddings over the class conditionals. We also explored adding additional linear and non-linear layers to the discriminator after the concatenation operation. However, after 40-60 epochs of training, these models were not significantly better than the one presented above.
-
-\subsection*{Additional Experiments with Conditional DCGAN Architecture}
+\begin{figure}[H]
+  \includegraphics[scale=0.5]{images/MNIST_fixed_noise_conditional_fake.png}
+  \label{fig:boat1}
+  \caption{Conditional Experiment on MNIST Model}
+\end{figure}
+In both examples, you can see that the class conditional makes very little (if any) difference in the nature of the image generated by the model.
+\subsection*{Experiments with Conditional DCGAN Architecture}
 The limited effect of the class conditionals motivated us to modify our architecture so that the model be more sensitive to the class labels in the discriminator and the generator. We thought one issue might be that the magnitude of the values in the feature vector produced by the convolution network of the discriminator might be much larger than the values of the one-hot encoding vector, which contains nine 0 values and one 1 value. We addressed this by adding a batch-normalization layer to the convolved feature vector of the image before it is concatenated with the one-hot class conditional vector. However, this did not work well at all and the images produced resembled pure noise.
 \newline
 \newline
-Next, we considered the possibility that rather than using one-hot vectors, it might improve the model to learn a large non-linear embedding over the one-hot class conditional vectors. We added a sigmoid layer to the generator which affine transformed the one-hot encoded vector into a 200-dimensional vector and then applied a sigmoid non-linearity. As before, this 200-dimensional vector representing the class conditional was concatenated with the noise vector and passed through the generator network to generate a fake image. Similarly, we added a sigmoid layer to the discriminator network which learned a 200-dimensional embedding over the one-hot class conditionals. As before, this vector representing the class conditional was concatenated with the convolved feature of the (fake or real) image, and then passed through a sigmoid layer to get a probability value. 
+Next, we considered the possibility that rather than using one-hot vectors, it might improve the model to learn a non-linear embedding over the one-hot class conditional vectors. In one set of experiments, we added a sigmoid layer to the one-hot vector before concatenating it with the convolved feature vector over the (fake or real) image in the discriminator. This sigmoid layer allowed us to learn small (10-dimensional) embeddings over the class conditionals. We also explored adding additional linear and non-linear layers to the discriminator after the concatenation operation. However, after 30-40 epochs of training, these models were not significantly better than the one presented above (at 40 epochs).
 \newline
 \newline
-Below, we show some results from this approach:
-\begin{center} 
-INSERT IMAGE HERE 
+In another set of experiments, we learned a much larger (200-dimensional) embedding over the one-hot class conditionals before concatenating them with the convolved feature vectors of the (fake or real) image in the discriminator network. This concatenated vector was passed through a sigmoid layer to get a probability value. Additionally, we allowed the generator to learn a 200-dimensional embedding over the one-hot class conditionals, and concatenated these embeddings with noise vectors before passing the concatenated vectors through the generator to create fake images. Unfortunately, both of these models trained poorly and did not generate images which were comparable to the previous models. 
+\subsection*{Conclusion}
+In ``Conditional Generative Adversarial Nets for Convolutional Face Generation", Gauthier trained similar models on images of human faces. [4] In these models, it took approximately 130 epochs of training to obtain high quality generated face images, while between epochs 60 and 80, the generated images had some local qualities of faces such as color patterns and borders but not strong global resemblance to faces. Due to computational resources, we were able to train many of our models in the range of 40 to 60 epochs, and, as in the paper, we noticed that our generated images had some local qualities that resembled images from the original data.
 \newline
 \newline
-\end{center}
-In ``Conditional Generative Adversarial Nets for Convolutional Face Generation", [???] trained similar models on images of human faces. In these models, it took approximately 130 epochs of training to obtain high quality generated face images, while between epochs 60 and 80, the generated images had some local qualities of faces such as color patterns and borders but not strong global resemblance to faces. Due to computational resources, we were able to train many of our models in the range of 40 to 60 epochs, and as in the paper, we noticed that our generated images had some local qualities that resembled images from the original data. [FOR EXAMPLE.....] However, we suspect more training time is needed to get high-quality generated images. We did not train our models with GPUs, but we expect that utilizing GPUs would have allowed some of our models to quickly train past 100 epochs, where we could expect higher quality generated images. Furthermore, the low resolution quality of the original images negatively impacted the quality of our generated images.
+However, we suspect more training time is needed to get high-quality generated images. We did not train our models with GPUs, but we expect that utilizing GPUs would have allowed some of our models to quickly train past 100 epochs, where we could expect higher quality generated images. Furthermore, the low resolution quality of the original images negatively impacted the quality of our generated images.
+
+\section*{References and Resources}
+\begin{enumerate}
+\item{NIPS 2016 Tutorial: Generative Adversarial Networks, Ian Goodfellow. 2016. }
+\item{``Tutorial - What is a variational autoencoder?". Jaan Altosaar. Blogpost at: https://jaan.io/what-is-variational-autoencoder-vae-tutorial/}
+\item{Conditional Generative Adversarial Networks. Mehdi Mirza and Simon Osindero. 2014. }
+\item{``Conditional Generative Adversarial Nets for Convolutional Face Generation" Jon Gauthier. 2015. }
+\item{``Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks". Alec Radford, Luke Metz, and Soumith Chintala. 2015. }
+\item{PyTorch DCGAN implementation by FAIR: https://github.com/pytorch/examples/tree/master/dcgan}
+\end{enumerate}
 \end{document}
