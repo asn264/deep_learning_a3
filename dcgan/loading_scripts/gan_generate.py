@@ -1,4 +1,12 @@
-'''Generate a 5x10 grid of best images for conditional models. Does 5 images for each class (cifar10).'''
+'''Authors: Aditi Nair and Akash Shah
+
+Generate a 5x10 grid of best images for conditional models. Does 5 images for each class (cifar10).
+
+Generator loaded from our best model file, the link is included in our submission and the model checkpoint is saved on GitHub.
+This model checkpoint should be in the same directory as this script.
+
+The output images will be saved in this directory as well.
+'''
 
 from __future__ import print_function
 import argparse
@@ -31,7 +39,7 @@ parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, def
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-parser.add_argument('--netG', default='../cifar/conditional_400_5/netG_epoch_12.m', help="path to netG (to continue training)")
+parser.add_argument('--netG', default='./netG_epoch_39.m', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
 parser.add_argument('--outf', default='./', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
@@ -42,7 +50,7 @@ opt = parser.parse_args()
 
 if opt.manualSeed is None:
     opt.manualSeed = random.randint(1, 10000)
-#print("Random Seed: ", opt.manualSeed)
+
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 if opt.cuda:
@@ -50,8 +58,6 @@ if opt.cuda:
 
 cudnn.benchmark = True
 
-#if torch.cuda.is_available() and not opt.cuda:
-#    print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
 if opt.dataset in ['imagenet', 'folder', 'lfw']:
     # folder dataset
@@ -116,7 +122,7 @@ class _netG(nn.Module):
         super(_netG, self).__init__()
         self.ngpu = ngpu
         self.main = nn.Sequential(
-            # input is Z, going into a convolution
+            # inputs are noise vector z and one-hot class embeddings, going into a convolution
             nn.ConvTranspose2d(nz+opt.n_classes, ngf * 8, 4, 1, 0, bias=False),
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
@@ -155,11 +161,13 @@ netG.eval()
 fixed_noise = torch.FloatTensor(50, nz).normal_(0, 1) #used for generating images
 one_hot_labels = torch.LongTensor([i for i in range(10) for j in range(5)]).resize_(50,1) #0 five times, 1 five times, ... 9 five times.
 one_hots = torch.zeros(50,opt.n_classes).scatter_(1, one_hot_labels, 1) #also used for generating images
+
+#concatenate fixed noise with conditionals and create tensor/variable
 fixed_noise_with_conditionals = torch.cat([fixed_noise,one_hots],1)
 fixed_noise_with_conditionals.resize_(50, nz+opt.n_classes,1,1)
 fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
 
 fake = netG(fixed_noise_with_conditionals)
-vutils.save_image(fake.data, opt.outf+'/conditional_400_10x5_generated.png', nrow=5, normalize=True)
+vutils.save_image(fake.data, opt.outf+'/10x5_generated.png', nrow=5, normalize=True)
 print ('Done.')
 
