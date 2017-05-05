@@ -31,7 +31,7 @@ parser.add_argument('--lr', type=float, default=0.0002, help='learning rate, def
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
 parser.add_argument('--cuda', action='store_true', help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-parser.add_argument('--netG', default='../cifar/conditional/netG_epoch_19.m', help="path to netG (to continue training)")
+parser.add_argument('--netG', default='../cifar/conditional_400_5/netG_epoch_12.m', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
 parser.add_argument('--outf', default='./', help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
@@ -94,6 +94,8 @@ ngpu = int(opt.ngpu)
 nz = int(opt.nz)
 ngf = int(opt.ngf)
 ndf = int(opt.ndf)
+
+#use one channel for MNIST dataset, otherwise use three channels
 if opt.dataset == 'mnist':
 	nc = 1
 else:
@@ -108,7 +110,7 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
-'''CONDITIONAL NET G IS THE SAME EVERYWHERE'''
+#use netG from our conditional DCGAN model
 class _netG(nn.Module):
     def __init__(self, ngpu):
         super(_netG, self).__init__()
@@ -158,6 +160,6 @@ fixed_noise_with_conditionals.resize_(50, nz+opt.n_classes,1,1)
 fixed_noise_with_conditionals = Variable(fixed_noise_with_conditionals)
 
 fake = netG(fixed_noise_with_conditionals)
-vutils.save_image(fake.data, opt.outf+'/10x5_generated.png', nrow=5, normalize=True)
+vutils.save_image(fake.data, opt.outf+'/conditional_400_10x5_generated.png', nrow=5, normalize=True)
 print ('Done.')
 
